@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           message: "تعذر إنشاء النموذج بسبب خطأ في البيانات",
-          issues: error.errors,
+          issues: error.issues,
         },
         { status: 400 },
       );

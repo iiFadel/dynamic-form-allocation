@@ -120,7 +120,7 @@ export async function POST(
       return NextResponse.json(
         {
           message: "تعذر اعتماد المدخلات",
-          issues: error.errors,
+          issues: error.issues,
         },
         { status: 400 },
       );
