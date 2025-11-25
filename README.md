@@ -1,36 +1,79 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## خدمة النماذج الديناميكية
 
-## Getting Started
+تستقبل الخدمة تعريف النموذج عبر Webhook (مثلاً من n8n)، ثم تولد رابطاً فريداً يعرض النموذج بالعربية مع اتجاه RTL. عند تعبئة النموذج يتم إعادة إرسال الردود إلى الـ callback webhook المحدد في الطلب الأول.
 
-First, run the development server:
+### التثبيت والتشغيل المحلي
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# التطبيق متاح على http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+أنشئ ملف `.env.local` وحدد مفتاح التوقيع المستخدم لحماية الروابط:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+FORM_TOKEN_SECRET=ضع-هنا-سلسلة-طويلة-وعشوائية
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### إنشاء نموذج جديد
 
-## Learn More
+أرسل طلب `POST` إلى `/api/forms` بالصيغة التالية (لاحظ أن كل خدمة ستحصل على مجموعة أزرار راديو تضم جميع الموظفين):
 
-To learn more about Next.js, take a look at the following resources:
+```json
+{
+  "title": "توزيع المهام اليومية",
+  "description": "طلب رقم #4821\\nالخدمات المطلوبة: اشتراك بريميوم + زيارة ميدانية",
+  "callbackUrl": "https://n8n.example.com/webhook/form-response",
+  "services": [
+    { "id": "srv-1", "name": "اشتراك بريميوم" },
+    { "id": "srv-2", "name": "زيارة ميدانية" },
+    { "id": "srv-3", "name": "استشارة هاتفية" }
+  ],
+  "workers": [
+    { "id": "ali", "name": "علي" },
+    { "id": "sara", "name": "سارة" }
+  ]
+}
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+ستحصل على استجابة مشابهة:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```json
+{
+  "formUrl": "https://your-app.vercel.app/form/ENCODED_TOKEN",
+  "formId": "0dd2f53d-..."
+}
+```
 
-## Deploy on Vercel
+شارك `formUrl` مع المستخدم. عندما يتم إرسال النموذج، ستتلقى `callbackUrl` حمولة JSON تضم:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```json
+{
+  "formId": "0dd2f53d-...",
+  "formTitle": "توزيع المهام اليومية",
+  "description": "طلب رقم #4821\\nالخدمات المطلوبة: اشتراك بريميوم + زيارة ميدانية",
+  "assignments": [
+    {
+      "service": { "id": "srv-1", "name": "اشتراك بريميوم" },
+      "worker": { "id": "ali", "name": "علي" }
+    },
+    {
+      "service": { "id": "srv-2", "name": "زيارة ميدانية" },
+      "worker": { "id": "sara", "name": "سارة" }
+    },
+    {
+      "service": { "id": "srv-3", "name": "استشارة هاتفية" },
+      "worker": { "id": "ali", "name": "علي" }
+    }
+  ],
+  "notes": null,
+  "submittedAt": "2025-11-25T09:15:00.000Z"
+}
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+يمكن للمستخدم اختيار الموظف ذاته لأكثر من خدمة، لكن يجب إسناد موظف واحد لكل خدمة قبل الإرسال.
+
+### نشر الخدمة
+
+قم بربط المستودع مع Vercel وتشغيل نشر عادي. لا حاجة لقاعدة بيانات لأن تعريف النموذج يُشفّر داخل الرابط نفسه، لكن تأكد من إعداد المتغير البيئي `FORM_TOKEN_SECRET` في إعدادات Vercel.
