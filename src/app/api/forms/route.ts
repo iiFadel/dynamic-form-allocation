@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { encodeFormToken } from "@/lib/form-token";
 import { FormDefinition } from "@/types/forms";
+import { createShortId } from "@/lib/short-id";
 
 const workerSchema = z.object({
   id: z.string().min(1, "مطلوب معرّف الموظف"),
@@ -39,11 +39,11 @@ export async function POST(request: NextRequest) {
       createdAt: Date.now(),
     };
 
-    const token = encodeFormToken(definition);
+    const shortId = createShortId(definition);
     const origin = request.nextUrl.origin;
 
     return NextResponse.json({
-      formUrl: `${origin}/form/${token}`,
+      formUrl: `${origin}/form/${shortId}`,
       formId: definition.formId,
     });
   } catch (error) {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { decodeFormToken } from "@/lib/form-token";
+import { resolveShortId } from "@/lib/short-id";
 
 const assignmentSchema = z.object({
   serviceId: z.string().min(1, "مطلوب اختيار خدمة"),
@@ -23,11 +23,11 @@ export async function POST(
   context: { params: Params },
 ) {
   const resolvedParams = await context.params;
-  const tokenParam = Array.isArray(resolvedParams?.token)
+  const shortId = Array.isArray(resolvedParams?.token)
     ? resolvedParams?.token[0]
     : resolvedParams?.token;
 
-  const definition = decodeFormToken(tokenParam);
+  const definition = resolveShortId(shortId);
 
   if (!definition) {
     return NextResponse.json(
@@ -37,7 +37,7 @@ export async function POST(
   }
 
   try {
-    if (!tokenParam) {
+    if (!shortId) {
       return NextResponse.json(
         { message: "رابط النموذج غير صالح أو منتهي" },
         { status: 404 },
